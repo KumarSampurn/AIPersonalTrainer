@@ -4,17 +4,28 @@ import poseEstimationModule as pem
 import numpy as np
 
 
-def findpoints(img,lmList,muscle=0):
-    if(muscle == 0): #right biceps points are 11 13 15 
-        x1,y1= lmList[11][1], lmList[11][2]
-        x2,y2= lmList[13][1], lmList[13][2]
-        x3,y3= lmList[15][1], lmList[15][2]
 
-        img =drawFeatures(img,(x1,y1),(x2,y2),(x3,y3))
-        # angle =findAngle((x1,y1),(x2,y2),(x3,y3))
-        
-        
-    return img
+def findAngle(p1,p2,p3):
+    x1,y1= p1[0],p1[1]
+    x2,y2= p2[0],p2[1]
+    x3,y3= p3[0],p3[1]
+    
+    
+    vector_a=[x1-x2,y1-y2]
+    vector_b=[x3-x2,y3-y2]
+    
+    dot_product=np.dot(vector_a,vector_b)
+    
+    magnitude_a=np.linalg.norm(vector_a)
+    magnitude_b=np.linalg.norm(vector_b)
+    
+    cos_theta = dot_product / (magnitude_a * magnitude_b)
+    
+    theta = np.arccos(cos_theta)
+    
+    return(np.degrees(theta))
+    
+
 
 
 def drawFeatures(img,p1,p2,p3):
@@ -22,24 +33,42 @@ def drawFeatures(img,p1,p2,p3):
     x2,y2= p2[0],p2[1]
     x3,y3= p3[0],p3[1]
     
-    
     cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
     cv2.line(img,(x2,y2),(x3,y3),(0,255,0),2)
     
-    cv2.circle(img,(x1,y1),3,(255,0,0),3,cv2.FILLED)
-    cv2.circle(img,(x2,y2),3,(255,0,0),3,cv2.FILLED)
-    cv2.circle(img,(x3,y3),3,(255,0,0),3,cv2.FILLED)
+    cv2.circle(img,(x1,y1),10,(255,0,0),cv2.FILLED)
+    cv2.circle(img,(x1,y1),15,(255,0,0),2)
+    cv2.circle(img,(x2,y2),10,(255,0,0),cv2.FILLED)
+    cv2.circle(img,(x2,y2),15,(255,0,0),2)
+    cv2.circle(img,(x3,y3),10,(255,0,0),cv2.FILLED)
+    cv2.circle(img,(x3,y3),15,(255,0,0),2)
 
     return img
 
 
 
-def putAngle(img,lmList,muscle=0):
-        img=findpoints(img,lmList,muscle)
-        
-        
-        
 
+def findDrawPoints(img,lmList,muscle=0):
+    if(muscle == 0): #right biceps points are 11 13 15 
+        x1,y1= lmList[11][1], lmList[11][2]
+        x2,y2= lmList[13][1], lmList[13][2]
+        x3,y3= lmList[15][1], lmList[15][2]
+
+        img =drawFeatures(img,(x1,y1),(x2,y2),(x3,y3))
+        angle =int(findAngle((x1,y1),(x2,y2),(x3,y3)))
+        cv2.putText(img,str(angle),(x2-50,y2-50),cv2.FONT_HERSHEY_PLAIN,2,(255,255,255),2)
+                
+    return img, angle
+
+
+def checkAngle(img,lmList,muscle=0,flag=0):
+        img,angle=findDrawPoints(img,lmList,muscle)
+        
+        if(angle <40 and flag==0):
+            count+=1
+        
+        
+        
         return img
 
 
@@ -48,11 +77,10 @@ def putAngle(img,lmList,muscle=0):
 
 
 cap = cv2.VideoCapture(0)
-# img=cv2.imread("AIPersonalTrainer/assets/2.jpg")
 detecotor=pem.poseDetector(detectionCon=0.95,trackCon=0.95)
 pTime = 0
 cTime = 0
-
+flag=0
 while True:
     success, img = cap.read()
     # img=cv2.resize(img,(590,800))
@@ -61,7 +89,7 @@ while True:
     img=detecotor.findPose(img,draw=False)
     lmList=detecotor.findPosition(img,draw=False) 
     if(len(lmList)!=0):
-        img= putAngle(img,lmList,0)       
+        img= checkAngle(img,lmList,0,flag)       
                 
             
     cTime = time.time()
