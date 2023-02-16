@@ -61,26 +61,26 @@ def findDrawPoints(img,lmList,muscle=0):
     return img, angle
 
 
-def checkAngle(img,lmList,muscle=0,flag=0):
+def checkAngle(img,lmList,count,goingUp,muscle=0):
         img,angle=findDrawPoints(img,lmList,muscle)
         
-        if(angle <40 and flag==0):
-            count+=1
+        if(angle < 70 and goingUp==1):
+            goingUp=0
+            count=count+1
+        if(angle > 120 and goingUp==0):
+            goingUp=1  
+       
         
-        
-        
-        return img
+        return img,count,goingUp
 
 
 
-
-
-
-cap = cv2.VideoCapture(0)
-detecotor=pem.poseDetector(detectionCon=0.95,trackCon=0.95)
+cap = cv2.VideoCapture("AIPersonalTrainer/assets/1.mp4")
+detecotor=pem.poseDetector(detectionCon=.5,trackCon=.5)
 pTime = 0
 cTime = 0
-flag=0
+goingUp=1
+count=0
 while True:
     success, img = cap.read()
     # img=cv2.resize(img,(590,800))
@@ -89,8 +89,9 @@ while True:
     img=detecotor.findPose(img,draw=False)
     lmList=detecotor.findPosition(img,draw=False) 
     if(len(lmList)!=0):
-        img= checkAngle(img,lmList,0,flag)       
-                
+        img,count,goingUp= checkAngle(img,lmList,count,goingUp,0)       
+    print("count :",count)  
+    print("goingUp: ",goingUp)  
             
     cTime = time.time()
     fps = 1 / (cTime - pTime)
